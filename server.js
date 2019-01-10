@@ -1,5 +1,8 @@
-const http = require('http').createServer().listen(4200, 'localhost');
+const port = process.env.PORT || 4200;
+const http = require('http').createServer().listen(port);
 const io = require('socket.io').listen(http);
+
+console.log(`Listening on port ${port}`);
 
 io.on('connection', socket => {
 
