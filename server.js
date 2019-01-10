@@ -4,6 +4,8 @@ const io = require('socket.io').listen(http);
 
 console.log(`Listening on port ${port}`);
 
+io.set('transports', ['websocket']);
+
 io.on('connection', socket => {
 
   console.log('new user connected');
