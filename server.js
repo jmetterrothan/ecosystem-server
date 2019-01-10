@@ -8,10 +8,19 @@ io.on('connection', socket => {
   /**
    * Join room
    */
-  socket.on('room', seed => {
+  socket.on('join_room', seed => {
     socket.join(seed);
-    const userCount = io.sockets.adapter.rooms[seed].length;
-    io.to(seed).emit('room_joined', { id: socket.id, userCount }); // alert room  
+    const me = socket.id;
+
+    const room = io.sockets.adapter.rooms[seed];
+    const allUsers = Object.keys(room.sockets)
+
+    // send socket id and all user id;
+    io.to(seed).emit('room_joined', { me, usersConnected: allUsers }); // alert all user in room  
+  })
+
+  socket.on('position', data => {
+    socket.broadcast.to(data.room).emit('position_updated', { userID: socket.id, position: data.position });
   })
 
   /**
