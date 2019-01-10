@@ -5,6 +5,7 @@ const io = require('socket.io').listen(http);
 console.log(`Listening on port ${port}`);
 
 io.set('transports', ['websocket']);
+io.set('origins', 'localhost:*');
 
 io.on('connection', socket => {
 
