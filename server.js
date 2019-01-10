@@ -3,20 +3,21 @@ const uniqid = require('uniqid');
 const http = require('http').createServer().listen(4200, 'localhost');
 const io = require('socket.io').listen(http);
 
-io.on('connection', ws => {
+io.on('connection', socket => {
 
-  // send unique id when user connected
-  const uid = uniqid();
-  io.emit('user_id', uid);
+  console.log('new user connected');
 
-  ws.on('message', message => {
-    // console.log(message);
-  });
-
-  ws.on('broadcast', players => {
-    ws.broadcast.emit('update_position', ...players);
+  /**
+   * Join room
+   */
+  socket.on('room', seed => {
+    socket.join(seed);
+    const userCount = io.sockets.adapter.rooms[seed].length;
+    io.to(seed).emit('room_joined', userCount); // alert room
   })
 
-  ws.on('disconnect', () => console.log('user disconnected'));
-
+  /**
+   * On disconnection
+   */
+  socket.on('disconnect', () => console.log('----------------------'));
 });
