@@ -16,8 +16,18 @@ io.on('connection', socket => {
     const room = io.sockets.adapter.rooms[seed];
     const allUsers = Object.keys(room.sockets)
 
+
     // send socket id and all user id;
     io.to(seed).emit('room_joined', { me, usersConnected: allUsers }); // alert all user in room  
+  })
+
+  /**
+   * Init objects
+   */
+  socket.on('objects_init', data => {
+    socket.broadcast.to(data.room).emit('objects_initialized', {
+      objectsPlaced: data.objectsPlaced
+    })
   })
 
   /**
@@ -39,7 +49,6 @@ io.on('connection', socket => {
    * Broadcast object to add on scene
    */
   socket.on('object', data => {
-    console.log('object placed', data.room, data.item);
     socket.broadcast.to(data.room).emit('object_added', { item: data.item });
   })
 
