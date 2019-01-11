@@ -1,10 +1,9 @@
-const port = process.env.PORT || 4200;
-const http = require('http').createServer().listen(port);
+const http = require('http').createServer().listen(4200, 'localhost');
 const io = require('socket.io').listen(http);
 
-console.log(`Listening on port ${port}`);
 
 io.on('connection', socket => {
+
   console.log('new user connected');
 
   /**
@@ -21,12 +20,27 @@ io.on('connection', socket => {
     io.to(seed).emit('room_joined', { me, usersConnected: allUsers }); // alert all user in room  
   })
 
+  /**
+   * On disconnection
+   */
+  socket.on('disconnect', () => {
+    io.emit('disconnection', { userID: socket.id });
+  });
+
+
+  /**
+   * Broadcast position
+   */
   socket.on('position', data => {
     socket.broadcast.to(data.room).emit('position_updated', { userID: socket.id, position: data.position });
   })
 
   /**
-   * On disconnection
+   * Broadcast object to add on scene
    */
-  socket.on('disconnect', () => console.log('----------------------'));
+  socket.on('object', data => {
+    console.log('object placed', data.room, data.item);
+    socket.broadcast.to(data.room).emit('object_added', { item: data.item });
+  })
+
 });
