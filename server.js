@@ -1,3 +1,5 @@
+const { performance } = require('perf_hooks');
+
 const port = process.env.PORT || 4200;
 
 const http = require('http').createServer().listen(port);
@@ -5,9 +7,13 @@ const io = require('socket.io').listen(http);
 
 console.log(`Listening on port ${port}`)
 
+let startTime;
+
 io.on('connection', socket => {
 
   console.log('new user connected');
+
+  if (!startTime) startTime = performance.now();
 
   /**
    * Join room
@@ -20,7 +26,7 @@ io.on('connection', socket => {
     const allUsers = Object.keys(room.sockets)
 
     // send socket id and all user id;
-    io.to(seed).emit('SV_SEND_JOIN_ROOM', { me, usersConnected: allUsers }); // alert all user in room  
+    io.to(seed).emit('SV_SEND_JOIN_ROOM', { me, usersConnected: allUsers, startTime }); // alert all user in room  
   })
 
   /**
