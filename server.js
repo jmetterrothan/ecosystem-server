@@ -27,11 +27,10 @@ io.on('connection', socket => {
     const allUsers = Object.keys(io.sockets.adapter.rooms[roomID].sockets);
 
     // init room on map if not present
-    const objects = [];
     if (!rooms.has(roomID)) {
       rooms.set(roomID, {
         users: allUsers,
-        objects
+        objects: []
       });
     } else {
       // update users list
@@ -46,7 +45,7 @@ io.on('connection', socket => {
       me,
       startTime,
       usersConnected: allUsers,
-      allObjects: objects
+      allObjects: rooms.get(roomID).objects
     });
   })
 
@@ -87,7 +86,7 @@ io.on('connection', socket => {
     }
 
     // delete user in room
-    usersInRoom.splice(usersInRoom.indexOf(socket.id), 1);
+    if (usersInRoom.length) usersInRoom.splice(usersInRoom.indexOf(socket.id), 1);
     if (!usersInRoom.length) rooms.delete(roomID);
     else rooms.set(roomID, {
       ...rooms.get(roomID),
@@ -95,7 +94,6 @@ io.on('connection', socket => {
     });
 
     socket.broadcast.to(roomID).emit('SV_SEND_DISCONNECTION', { userID: socket.id });
-    // io.emit('SV_SEND_DISCONNECTION', { userID: socket.id });
   });
 
 });
