@@ -23,27 +23,33 @@ io.on('connection', socket => {
     socket.join(roomID);
     const me = socket.id;
 
-    // init room on map if not present
-    if (!rooms.has(roomID)) {
-      rooms.set(roomID, []);
-    }
-
-
     // get users in room
     const allUsers = Object.keys(io.sockets.adapter.rooms[roomID].sockets);
 
+    // init room on map if not present
+    const objects = [];
+    if (!rooms.has(roomID)) {
+      rooms.set(roomID, {
+        users: allUsers,
+        objects
+      });
+    } else {
+      // update users list
+      rooms.set(roomID, {
+        ...rooms.get(roomID),
+        users: allUsers,
+      })
+    }
+
     // send socket id and all user id;
-    io.to(roomID).emit('SV_SEND_JOIN_ROOM', { me, startTime, usersConnected: allUsers, allObjects: rooms.get(roomID) }); // alert all user in room  
+    io.to(roomID).emit('SV_SEND_JOIN_ROOM', {
+      me,
+      startTime,
+      usersConnected: allUsers,
+      allObjects: objects
+    });
   })
 
-  /**
-   * Init objects
-   */
-  socket.on('CL_SEND_INIT_OBJECTS', data => {
-    socket.broadcast.to(data.roomID).emit('SV_SEND_INIT_OBJECTS', {
-      placedObjects: data.placedObjects
-    })
-  })
 
   /**
    * Broadcast position
@@ -56,9 +62,11 @@ io.on('connection', socket => {
    * Broadcast object to add on scene
    */
   socket.on('CL_SEND_ADD_OBJECT', data => {
-    const roomObjects = rooms.get(data.roomID);
+    // stock new objects on room data
+    const room = rooms.get(data.roomID);
+    const roomObjects = room.objects;
     roomObjects.push(data.item);
-    rooms.set(data.roomID, roomObjects);
+    rooms.set(data.roomID, { ...room, objects: roomObjects });
 
     socket.broadcast.to(data.roomID).emit('SV_SEND_ADD_OBJECT', { item: data.item });
   })
@@ -67,7 +75,27 @@ io.on('connection', socket => {
  * On disconnection
  */
   socket.on('disconnect', () => {
-    io.emit('SV_SEND_DISCONNECTION', { userID: socket.id });
+    const allRooms = rooms.entries();
+    let room = allRooms.next();
+    let roomID;
+    let usersInRoom;
+    while (!room.done) {
+      roomID = room.value[0];
+      usersInRoom = room.value[1].users;
+      if (usersInRoom.includes(socket.id)) break;
+      room = allRooms.next();
+    }
+
+    // delete user in room
+    usersInRoom.splice(usersInRoom.indexOf(socket.id), 1);
+    if (!usersInRoom.length) rooms.delete(roomID);
+    else rooms.set(roomID, {
+      ...rooms.get(roomID),
+      users: usersInRoom
+    });
+
+    socket.broadcast.to(roomID).emit('SV_SEND_DISCONNECTION', { userID: socket.id });
+    // io.emit('SV_SEND_DISCONNECTION', { userID: socket.id });
   });
 
 });
