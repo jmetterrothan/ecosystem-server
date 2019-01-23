@@ -10,6 +10,11 @@ const io = require('socket.io').listen(http);
 
 const voiceModel = require('./voicemodel.json');
 
+
+app.get('/', (req ,res) => {
+  res.send('welcome to the ecosystem-server !');
+});
+
 app.get('/model', (req ,res) => {
   res.json(voiceModel);
 });
