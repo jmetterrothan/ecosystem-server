@@ -2,10 +2,17 @@ const { performance } = require('perf_hooks');
 
 const port = process.env.PORT || 4200;
 
-const http = require('http').createServer().listen(port);
+const express = require('express');
+const app = express();
+
+const http = require('http').createServer(app);
 const io = require('socket.io').listen(http);
 
-console.log(`Listening on port ${port}`)
+const voiceModel = require('./voicemodel.json');
+
+app.get('/model', (req ,res) => {
+  res.json(voiceModel);
+});
 
 let startTime;
 const rooms = new Map();
@@ -97,3 +104,6 @@ io.on('connection', socket => {
   });
 
 });
+
+http.listen(port, _ => console.log(`Listening on port ${port}`));
+
