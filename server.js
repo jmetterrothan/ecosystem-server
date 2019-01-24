@@ -3,6 +3,7 @@ const { performance } = require('perf_hooks');
 const port = process.env.PORT || 4200;
 
 const express = require('express');
+const cors = require('cors');
 const app = express();
 
 const http = require('http').createServer(app);
@@ -11,9 +12,7 @@ const io = require('socket.io').listen(http);
 const voiceModel = require('./voicemodel.json');
 
 
-app.get('/', (req ,res) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+app.get('/', cors(), (req ,res) => {
   res.header('Content-Type', 'application/json');
   res.send('welcome to the ecosystem-server !');
 });
