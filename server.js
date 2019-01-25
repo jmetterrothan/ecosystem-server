@@ -6,19 +6,17 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 
+const voiceModel = require('./voicemodel.json');
+
+app
+  .use(cors())
+  .use(express.static(__dirname + "/public"));
+
 const http = require('http').createServer(app);
 const io = require('socket.io').listen(http);
 
-const voiceModel = require('./voicemodel.json');
-
-
-app.get('/', cors(), (req ,res) => {
-  res.header('Content-Type', 'application/json');
+app.get('/', (req ,res) => {
   res.send('welcome to the ecosystem-server !');
-});
-
-app.get('/model', (req ,res) => {
-  res.json(voiceModel);
 });
 
 let startTime;
