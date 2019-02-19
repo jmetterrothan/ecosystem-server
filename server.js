@@ -15,7 +15,7 @@ app
 const http = require('http').createServer(app);
 const io = require('socket.io').listen(http);
 
-app.get('/', (req ,res) => {
+app.get('/', (req, res) => {
   res.send('welcome to the ecosystem-server !');
 });
 
@@ -92,8 +92,6 @@ io.on('connection', socket => {
     const roomObjectsRemoved = room.objectsRemoved;
     roomObjectsRemoved.push(data.object);
     rooms.set(data.roomID, { ...room, objectsRemoved: roomObjectsRemoved });
-
-    console.log('server', data.object);
 
     socket.broadcast.to(data.roomID).emit('SV_SEND_REMOVE_OBJECT', { object: data.object })
   });
