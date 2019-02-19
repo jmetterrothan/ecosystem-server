@@ -30,7 +30,8 @@ io.on('connection', socket => {
     if (!rooms.has(roomID)) {
       rooms.set(roomID, {
         users: allUsers,
-        objects: []
+        objectsAdded: [],
+        objectsRemoved: []
       });
     } else {
       // update users list
@@ -45,7 +46,8 @@ io.on('connection', socket => {
       me,
       startTime,
       usersConnected: allUsers,
-      allObjects: rooms.get(roomID).objects
+      objectsAdded: rooms.get(roomID).objectsAdded,
+      objectsRemoved: rooms.get(roomID).objectsRemoved
     });
   })
 
@@ -63,12 +65,26 @@ io.on('connection', socket => {
   socket.on('CL_SEND_ADD_OBJECT', data => {
     // stock new objects on room data
     const room = rooms.get(data.roomID);
-    const roomObjects = room.objects;
+    const roomObjects = room.objectsAdded;
     roomObjects.push(data.item);
-    rooms.set(data.roomID, { ...room, objects: roomObjects });
+    rooms.set(data.roomID, { ...room, objectsAdded: roomObjects });
 
     socket.broadcast.to(data.roomID).emit('SV_SEND_ADD_OBJECT', { item: data.item });
   })
+
+  /**
+   * Broadcat object to remove
+   */
+  socket.on('CL_SEND_REMOVE_OBJECT', data => {
+    const room = rooms.get(data.roomID);
+    const roomObjectsRemoved = room.objectsRemoved;
+    roomObjectsRemoved.push(data.object);
+    rooms.set(data.roomID, { ...room, objectsRemoved: roomObjectsRemoved });
+
+    console.log('server', data.object);
+
+    socket.broadcast.to(data.roomID).emit('SV_SEND_REMOVE_OBJECT', { object: data.object })
+  });
 
   /**
  * On disconnection
