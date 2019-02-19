@@ -2,10 +2,22 @@ const { performance } = require('perf_hooks');
 
 const port = process.env.PORT || 4200;
 
-const http = require('http').createServer().listen(port);
+const express = require('express');
+const cors = require('cors');
+const app = express();
+
+const voiceModel = require('./voicemodel.json');
+
+app
+  .use(cors())
+  .use(express.static(__dirname + "/public"));
+
+const http = require('http').createServer(app);
 const io = require('socket.io').listen(http);
 
-console.log(`Listening on port ${port}`)
+app.get('/', (req ,res) => {
+  res.send('welcome to the ecosystem-server !');
+});
 
 let startTime;
 const rooms = new Map();
@@ -113,3 +125,6 @@ io.on('connection', socket => {
   });
 
 });
+
+http.listen(port, _ => console.log(`Listening on port ${port}`));
+
