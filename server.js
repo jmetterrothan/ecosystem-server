@@ -112,8 +112,8 @@ io.on('connection', socket => {
     }
 
     // delete user in room
-    if (usersInRoom.length) usersInRoom.splice(usersInRoom.indexOf(socket.id), 1);
-    if (!usersInRoom.length) rooms.delete(roomID);
+    if (usersInRoom && usersInRoom.length) usersInRoom.splice(usersInRoom.indexOf(socket.id), 1);
+    if (usersInRoom && !usersInRoom.length) rooms.delete(roomID);
     else rooms.set(roomID, {
       ...rooms.get(roomID),
       users: usersInRoom
