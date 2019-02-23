@@ -107,13 +107,13 @@ io.on('connection', socket => {
     while (!room.done) {
       roomID = room.value[0];
       usersInRoom = room.value[1].users;
-      if (usersInRoom.includes(socket.id)) break;
+      if (Array.isArray(usersInRoom) && usersInRoom.includes(socket.id)) break;
       room = allRooms.next();
     }
 
     // delete user in room
-    if (usersInRoom && usersInRoom.length) usersInRoom.splice(usersInRoom.indexOf(socket.id), 1);
-    if (usersInRoom && !usersInRoom.length) rooms.delete(roomID);
+    if (Array.isArray(usersInRoom) && usersInRoom.length) usersInRoom.splice(usersInRoom.indexOf(socket.id), 1);
+    if (Array.isArray(usersInRoom) && !usersInRoom.length) rooms.delete(roomID);
     else rooms.set(roomID, {
       ...rooms.get(roomID),
       users: usersInRoom
