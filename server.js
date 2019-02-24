@@ -15,6 +15,9 @@ app
 const http = require('http').createServer(app);
 const io = require('socket.io').listen(http);
 
+io.set('origins', '*:*');
+io.set('match origin protocol', true);
+
 app.get('/', (req, res) => {
   res.send('welcome to the ecosystem-server !');
 });
