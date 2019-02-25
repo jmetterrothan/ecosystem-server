@@ -15,8 +15,8 @@ app
 const http = require('http').createServer(app);
 const io = require('socket.io').listen(http);
 
-io.set('origins', '*:*');
-io.set('match origin protocol', true);
+// io.set('origins', '*:*');
+// io.set('match origin protocol', true);
 
 app.get('/', (req, res) => {
   res.send('welcome to the ecosystem-server !');
@@ -29,7 +29,7 @@ io.on('connection', socket => {
 
   console.log('new user connected');
 
-  if (!startTime) startTime = performance.now();
+  // if (!startTime) startTime = performance.now();
 
   /**
    * Join room
@@ -46,7 +46,8 @@ io.on('connection', socket => {
       rooms.set(roomID, {
         users: allUsers,
         objectsAdded: [],
-        objectsRemoved: []
+        objectsRemoved: [],
+        startTime: Date.now()
       });
     } else {
       // update users list
@@ -59,7 +60,7 @@ io.on('connection', socket => {
     // send socket id and all user id;
     io.to(roomID).emit('SV_SEND_JOIN_ROOM', {
       me,
-      startTime,
+      startTime: rooms.get(roomID).startTime,
       usersConnected: allUsers,
       objectsAdded: rooms.get(roomID).objectsAdded,
       objectsRemoved: rooms.get(roomID).objectsRemoved
