@@ -35,7 +35,7 @@ io.on('connection', socket => {
     const me = {
       id: socket.id,
       name: uniqueNamesGenerator('-', Math.random() < 0.5),
-      color: `rgb(${Math.random() * 256}, ${Math.random() * 256}, ${Math.random() * 256})`
+      color: `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`
     };
 
     // init room on map if not present
@@ -54,8 +54,6 @@ io.on('connection', socket => {
         users: [...room.users, me],
       })
     }
-
-    console.log(rooms.get(roomID));
 
     // send socket id and all user id;
     io.to(roomID).emit('SV_SEND_JOIN_ROOM', {
