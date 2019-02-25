@@ -1,4 +1,4 @@
-const { performance } = require('perf_hooks');
+const { uniqueNamesGenerator } = require('unique-names-generator');
 
 const port = process.env.PORT || 4200;
 
@@ -15,9 +15,6 @@ app
 const http = require('http').createServer(app);
 const io = require('socket.io').listen(http);
 
-// io.set('origins', '*:*');
-// io.set('match origin protocol', true);
-
 app.get('/', (req, res) => {
   res.send('welcome to the ecosystem-server !');
 });
@@ -29,39 +26,41 @@ io.on('connection', socket => {
 
   console.log('new user connected');
 
-  // if (!startTime) startTime = performance.now();
-
   /**
    * Join room
    */
   socket.on('CL_SEND_JOIN_ROOM', roomID => {
     socket.join(roomID);
-    const me = socket.id;
 
-    // get users in room
-    const allUsers = Object.keys(io.sockets.adapter.rooms[roomID].sockets);
+    const me = {
+      id: socket.id,
+      name: uniqueNamesGenerator('-', Math.random() < 0.5)
+    };
 
     // init room on map if not present
     if (!rooms.has(roomID)) {
       rooms.set(roomID, {
-        users: allUsers,
+        users: [me],
         objectsAdded: [],
         objectsRemoved: [],
         startTime: Date.now()
       });
     } else {
       // update users list
+      const room = rooms.get(roomID);
       rooms.set(roomID, {
-        ...rooms.get(roomID),
-        users: allUsers,
+        ...room,
+        users: [...room.users, me],
       })
     }
+
+    console.log(rooms.get(roomID));
 
     // send socket id and all user id;
     io.to(roomID).emit('SV_SEND_JOIN_ROOM', {
       me,
       startTime: rooms.get(roomID).startTime,
-      usersConnected: allUsers,
+      usersConnected: rooms.get(roomID).users,
       objectsAdded: rooms.get(roomID).objectsAdded,
       objectsRemoved: rooms.get(roomID).objectsRemoved
     });
