@@ -34,7 +34,8 @@ io.on('connection', socket => {
 
     const me = {
       id: socket.id,
-      name: uniqueNamesGenerator('-', Math.random() < 0.5)
+      name: uniqueNamesGenerator('-', Math.random() < 0.5),
+      color: `rgb(${Math.random() * 256}, ${Math.random() * 256}, ${Math.random() * 256})`
     };
 
     // init room on map if not present
