@@ -56,12 +56,13 @@ io.on('connection', socket => {
     }
 
     // send socket id and all user id;
+    const room = rooms.get(roomID);
     io.to(roomID).emit('SV_SEND_JOIN_ROOM', {
       me,
-      startTime: rooms.get(roomID).startTime,
-      usersConnected: rooms.get(roomID).users,
-      objectsAdded: rooms.get(roomID).objectsAdded,
-      objectsRemoved: rooms.get(roomID).objectsRemoved
+      startTime: room.startTime,
+      usersConnected: room.users,
+      objectsAdded: room.objectsAdded,
+      objectsRemoved: room.objectsRemoved
     });
   })
 
@@ -79,6 +80,11 @@ io.on('connection', socket => {
   socket.on('CL_SEND_ADD_OBJECT', data => {
     // stock new objects on room data
     const room = rooms.get(data.roomID);
+    if (!room) {
+      console.log(`room ${roomID} does not exist`)
+      return;
+    }
+
     const roomObjects = room.objectsAdded;
     roomObjects.push(data.item);
     rooms.set(data.roomID, { ...room, objectsAdded: roomObjects });
@@ -91,6 +97,11 @@ io.on('connection', socket => {
    */
   socket.on('CL_SEND_REMOVE_OBJECT', data => {
     const room = rooms.get(data.roomID);
+    if (!room) {
+      console.log(`room ${roomID} does not exist`)
+      return;
+    }
+
     const roomObjectsRemoved = room.objectsRemoved;
     roomObjectsRemoved.push(data.object);
     rooms.set(data.roomID, { ...room, objectsRemoved: roomObjectsRemoved });
