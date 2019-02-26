@@ -155,13 +155,11 @@ async function trainModel() {
 let startTime;
 const rooms = new Map();
 
-const messagesSize = messagesSize;
+const messagesSize = -16;
 
 io.on('connection', socket => {
 
   console.log('new user connected');
-
-
 
   /**
    * Join room
