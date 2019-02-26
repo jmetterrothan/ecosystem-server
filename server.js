@@ -44,6 +44,7 @@ io.on('connection', socket => {
         users: [me],
         objectsAdded: [],
         objectsRemoved: [],
+        messages: [],
         startTime: Date.now()
       });
     } else {
@@ -62,7 +63,8 @@ io.on('connection', socket => {
       startTime: room.startTime,
       usersConnected: room.users,
       objectsAdded: room.objectsAdded,
-      objectsRemoved: room.objectsRemoved
+      objectsRemoved: room.objectsRemoved,
+      messages: room.messages
     });
   })
 
@@ -81,7 +83,7 @@ io.on('connection', socket => {
     // stock new objects on room data
     const room = rooms.get(data.roomID);
     if (!room) {
-      console.log(`room ${roomID} does not exist`)
+      console.log(`room ${roomID} does not exist`);
       return;
     }
 
@@ -98,7 +100,7 @@ io.on('connection', socket => {
   socket.on('CL_SEND_REMOVE_OBJECT', data => {
     const room = rooms.get(data.roomID);
     if (!room) {
-      console.log(`room ${roomID} does not exist`)
+      console.log(`room ${roomID} does not exist`);
       return;
     }
 
@@ -106,8 +108,29 @@ io.on('connection', socket => {
     roomObjectsRemoved.push(data.object);
     rooms.set(data.roomID, { ...room, objectsRemoved: roomObjectsRemoved });
 
-    socket.broadcast.to(data.roomID).emit('SV_SEND_REMOVE_OBJECT', { object: data.object })
+    socket.broadcast.to(data.roomID).emit('SV_SEND_REMOVE_OBJECT', { object: data.object });
   });
+
+  /**
+   * Add message and broadcast it
+   */
+  socket.on('CL_SEND_MESSAGE', data => {
+    const room = rooms.get(data.roomID);
+    if (!room) {
+      console.log(`room ${roomID} does not exist`);
+      return;
+    }
+
+    const messages = room.messages;
+    messages.push({
+      id: Date.now(),
+      user: data.user,
+      content: data.message
+    });
+
+    rooms.set(data.roomID, { ...room, messages });
+    io.to(data.roomID).emit('SV_SEND_MESSAGES', messages);
+  })
 
   /**
  * On disconnection
