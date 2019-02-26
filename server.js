@@ -16,8 +16,8 @@ const app = express();
 app
   .use(cors())
   .use(express.static(__dirname + "/public"))
-  .use(bodyParser.json({limit: '250mb'}))
-  .use(bodyParser.urlencoded({limit:'250mb', extended: true }));
+  .use(bodyParser.json({ limit: '250mb' }))
+  .use(bodyParser.urlencoded({ limit: '250mb', extended: true }));
 
 const http = require('http').createServer(app);
 const io = require('socket.io').listen(http);
@@ -52,16 +52,16 @@ app.post('/uploadModel', (req, res) => {
 
 app.post('/collect', (req, res) => {
   const data = JSON.stringify(req.body);
-  const voiceSamples = new voiceSamplesTemplate({data});
+  const voiceSamples = new voiceSamplesTemplate({ data });
   voiceSamples.save();
   res.status(200).send('successfully collected samples !');
 });
 
 app.get('/trainModel', async (req, res) => {
   const samples =
-        await voiceSamplesTemplate.find({}).exec();
+    await voiceSamplesTemplate.find({}).exec();
 
-  if(!samples) {
+  if (!samples) {
     res.send('no samples found in the database');
     return;
   }
@@ -103,38 +103,38 @@ async function train(model, samples) {
   });
   tf.dispose([xs, ys]);
 
-  await model.save('file://'+ path.join(__dirname,'/public/'));
+  await model.save('file://' + path.join(__dirname, '/public/'));
 
   const voiceModel = await fs.readJson('./public/model.json');
-  const voiceModelDocument = new voiceModelTemplate({data: JSON.stringify(voiceModel)});
+  const voiceModelDocument = new voiceModelTemplate({ data: JSON.stringify(voiceModel) });
   voiceModelDocument.save();
 
   const voiceModelBin =
-        await fs.readFile(path.join(__dirname, '/public', 'weights.bin'));
-  const voiceModelDocumentBin = new voiceModelBinTemplate({data: voiceModelBin});
+    await fs.readFile(path.join(__dirname, '/public', 'weights.bin'));
+  const voiceModelDocumentBin = new voiceModelBinTemplate({ data: voiceModelBin });
   voiceModelDocumentBin.save();
 }
 
 async function trainModel() {
   const voiceModel =
-        await voiceModelTemplate.findOne(
-          {}, {}, { sort: { 'created_at' : -1 } }
-        ).exec();
+    await voiceModelTemplate.findOne(
+      {}, {}, { sort: { 'created_at': -1 } }
+    ).exec();
 
   await fs.writeFile(path.join(__dirname, '/public', 'voicemodel.json'),
-                     voiceModel.data);
+    voiceModel.data);
 
   const voiceModelBin =
-        await voiceModelBinTemplate.findOne(
-          {}, {}, { sort: { 'created_at' : -1 } }
-        ).exec();
+    await voiceModelBinTemplate.findOne(
+      {}, {}, { sort: { 'created_at': -1 } }
+    ).exec();
 
 
   await fs.writeFile(path.join(__dirname, '/public', 'voicemodel.weights.bin'),
-                     voiceModelBin.data);
+    voiceModelBin.data);
 
   const samples =
-        await voiceSamplesTemplate.find({}).exec();
+    await voiceSamplesTemplate.find({}).exec();
 
   voiceSamplesTemplate.deleteMany({});
 
@@ -167,7 +167,7 @@ io.on('connection', socket => {
 
     const me = {
       id: socket.id,
-      name: uniqueNamesGenerator('-', Math.random() < 0.5),
+      name: uniqueNamesGenerator('-', true),
       color: `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`
     };
 
