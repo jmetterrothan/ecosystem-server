@@ -171,13 +171,20 @@ io.on('connection', socket => {
       color: `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`
     };
 
+    const connectionSystemMessage = {
+      type: 'connection',
+      user: me,
+      content: '',
+      id: Date.now()
+    };
+
     // init room on map if not present
     if (!rooms.has(roomID)) {
       rooms.set(roomID, {
         users: [me],
         objectsAdded: [],
         objectsRemoved: [],
-        messages: [],
+        messages: [connectionSystemMessage],
         startTime: Date.now()
       });
     } else {
@@ -185,9 +192,12 @@ io.on('connection', socket => {
       const room = rooms.get(roomID);
       rooms.set(roomID, {
         ...room,
+        messages: [...room.messages, connectionSystemMessage],
         users: [...room.users, me],
       })
     }
+
+
 
     // send socket id and all user id;
     const room = rooms.get(roomID);
@@ -256,6 +266,7 @@ io.on('connection', socket => {
 
     const messages = room.messages;
     messages.push({
+      type: data.type,
       id: Date.now(),
       user: data.user,
       content: data.message
@@ -280,15 +291,26 @@ io.on('connection', socket => {
       room = allRooms.next();
     }
 
-    // delete user in room
-    if (Array.isArray(usersInRoom) && usersInRoom.length) usersInRoom.splice(usersInRoom.indexOf(socket.id), 1);
-    if (Array.isArray(usersInRoom) && !usersInRoom.length) rooms.delete(roomID);
-    else rooms.set(roomID, {
-      ...rooms.get(roomID),
-      users: usersInRoom
-    });
+    const disconnectionSystemMessage = {
+      type: 'disconnection',
+      user: usersInRoom.find(user => user.id === socket.id),
+      content: '',
+      id: Date.now()
+    };
 
-    socket.broadcast.to(roomID).emit('SV_SEND_DISCONNECTION', { userID: socket.id });
+    // delete user in room
+    if (Array.isArray(usersInRoom) && usersInRoom.length) usersInRoom.splice(usersInRoom.findIndex(user => user.id === socket.id), 1);
+    if (Array.isArray(usersInRoom) && !usersInRoom.length) rooms.delete(roomID);
+    else {
+      const room = rooms.get(roomID);
+      rooms.set(roomID, {
+        ...room,
+        messages: [...room.messages, disconnectionSystemMessage],
+        users: usersInRoom
+      });
+    }
+
+    socket.broadcast.to(roomID).emit('SV_SEND_DISCONNECTION', { userID: socket.id, messages: room.messages });
   });
 
 });
