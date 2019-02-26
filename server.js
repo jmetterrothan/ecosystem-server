@@ -1,23 +1,156 @@
 const { uniqueNamesGenerator } = require('unique-names-generator');
 
 const port = process.env.PORT || 4200;
+const db = "mongodb://admin:9y5qiPvYO1s1@ds135384.mlab.com:35384/3d-ecosystems";
 
 const express = require('express');
 const cors = require('cors');
-const app = express();
+const bodyParser = require('body-parser');
+const mongoose = require("mongoose");
+const fs = require('fs-extra');
+const path = require('path');
+const tf = require('@tensorflow/tfjs-node');
 
-const voiceModel = require('./voicemodel.json');
+const app = express();
 
 app
   .use(cors())
-  .use(express.static(__dirname + "/public"));
+  .use(express.static(__dirname + "/public"))
+  .use(bodyParser.json({limit: '250mb'}))
+  .use(bodyParser.urlencoded({limit:'250mb', extended: true }));
 
 const http = require('http').createServer(app);
 const io = require('socket.io').listen(http);
 
+// DATABASE
+
+mongoose.connect(db, { useNewUrlParser: true }, err => { if (err) console.log('ERROR :', err); });
+
+const voiceModelTemplate = mongoose.model("voiceModel", {
+  data: String
+});
+
+const voiceSamplesTemplate = mongoose.model("voiceSamples", {
+  data: Object
+});
+
+const voiceModelBinTemplate = mongoose.model("voiceModelBin", {
+  data: Buffer
+});
+
+// ROUTING
+
 app.get('/', (req, res) => {
   res.send('welcome to the ecosystem-server !');
 });
+
+app.post('/uploadModel', (req, res) => {
+  const data = req.body;
+  console.log(data);
+  res.status(200).send('model successfully received by the server !');
+});
+
+app.post('/collect', (req, res) => {
+  const data = JSON.stringify(req.body);
+  const voiceSamples = new voiceSamplesTemplate({data});
+  voiceSamples.save();
+  res.status(200).send('successfully collected samples !');
+});
+
+app.get('/trainModel', async (req, res) => {
+  const samples =
+        await voiceSamplesTemplate.find({}).exec();
+
+  if(!samples) {
+    res.send('no samples found in the database');
+    return;
+  }
+
+  await trainModel();
+
+  res.send('Model training finished');
+});
+
+// TENSORFLOW
+
+const NUM_FRAMES = 5;
+const INPUT_SHAPE = [NUM_FRAMES, 232, 1];
+
+function flatten(tensors) {
+  const size = Object.keys(tensors[0]).length;
+  const result = new Float32Array(tensors.length * size);
+  tensors.forEach((arr, i) => {
+    result.set(arr, i * size);
+  });
+  return result;
+}
+
+async function train(model, samples) {
+  const examples = JSON.parse(samples[0].data);
+
+  const ys = tf.oneHot(examples.map(e => parseInt(e.label, 10)), 3);
+  const xsShape = [examples.length, ...INPUT_SHAPE];
+  const xs = await tf.tensor(flatten(examples.map(e => e.vals)), xsShape);
+
+  await model.fit(xs, ys, {
+    batchSize: 16,
+    epochs: 10,
+    callbacks: {
+      onEpochEnd: (epoch, logs) => {
+        console.log(`Accuracy: ${(logs.acc * 100).toFixed(1)}% Epoch: ${epoch + 1}`);
+      }
+    }
+  });
+  tf.dispose([xs, ys]);
+
+  await model.save('file://'+ path.join(__dirname,'/public/'));
+
+  const voiceModel = await fs.readJson('./public/model.json');
+  const voiceModelDocument = new voiceModelTemplate({data: JSON.stringify(voiceModel)});
+  voiceModelDocument.save();
+
+  const voiceModelBin =
+        await fs.readFile(path.join(__dirname, '/public', 'weights.bin'));
+  const voiceModelDocumentBin = new voiceModelBinTemplate({data: voiceModelBin});
+  voiceModelDocumentBin.save();
+}
+
+async function trainModel() {
+  const voiceModel =
+        await voiceModelTemplate.findOne(
+          {}, {}, { sort: { 'created_at' : -1 } }
+        ).exec();
+
+  await fs.writeFile(path.join(__dirname, '/public', 'voicemodel.json'),
+                     voiceModel.data);
+
+  const voiceModelBin =
+        await voiceModelBinTemplate.findOne(
+          {}, {}, { sort: { 'created_at' : -1 } }
+        ).exec();
+
+
+  await fs.writeFile(path.join(__dirname, '/public', 'voicemodel.weights.bin'),
+                     voiceModelBin.data);
+
+  const samples =
+        await voiceSamplesTemplate.find({}).exec();
+
+  voiceSamplesTemplate.deleteMany({});
+
+  const tfVoiceModel = await tf.loadModel('http://localhost:4200/voicemodel.json');
+
+  tfVoiceModel.compile({
+    optimizer: tf.train.adam(0.01),
+    loss: 'categoricalCrossentropy',
+    metrics: ['accuracy']
+  });
+
+  await train(tfVoiceModel, samples);
+}
+
+
+// MULTIPLAYER
 
 let startTime;
 const rooms = new Map();
@@ -161,4 +294,3 @@ io.on('connection', socket => {
 });
 
 http.listen(port, _ => console.log(`Listening on port ${port}`));
-
