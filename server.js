@@ -155,9 +155,13 @@ async function trainModel() {
 let startTime;
 const rooms = new Map();
 
+const messagesSize = messagesSize;
+
 io.on('connection', socket => {
 
   console.log('new user connected');
+
+
 
   /**
    * Join room
@@ -192,7 +196,7 @@ io.on('connection', socket => {
       const room = rooms.get(roomID);
       rooms.set(roomID, {
         ...room,
-        messages: [...room.messages, connectionSystemMessage],
+        messages: [...room.messages, connectionSystemMessage].slice(messagesSize),
         users: [...room.users, me],
       })
     }
@@ -272,7 +276,7 @@ io.on('connection', socket => {
       content: data.message
     });
 
-    rooms.set(data.roomID, { ...room, messages });
+    rooms.set(data.roomID, { ...room, messages: messages.slice(messagesSize) });
     io.to(data.roomID).emit('SV_SEND_MESSAGES', messages);
   })
 
@@ -304,11 +308,12 @@ io.on('connection', socket => {
       const currentRoom = rooms.get(roomID);
       rooms.set(roomID, {
         ...currentRoom,
-        messages: [...currentRoom.messages, disconnectionSystemMessage],
+        messages: [...currentRoom.messages, disconnectionSystemMessage].slice(messagesSize),
         users: usersInRoom
       });
       socket.broadcast.to(roomID).emit('SV_SEND_DISCONNECTION', { userID: socket.id, messages: rooms.get(roomID).messages });
-    } else {
+    }
+    if (Array.isArray(usersInRoom) && usersInRoom.length === 0) {
       rooms.delete(roomID);
     }
   });
