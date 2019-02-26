@@ -299,18 +299,18 @@ io.on('connection', socket => {
     };
 
     // delete user in room
-    if (Array.isArray(usersInRoom) && usersInRoom.length) usersInRoom.splice(usersInRoom.findIndex(user => user.id === socket.id), 1);
-    if (Array.isArray(usersInRoom) && !usersInRoom.length) rooms.delete(roomID);
-    else {
-      const room = rooms.get(roomID);
+    if (Array.isArray(usersInRoom) && usersInRoom.length) {
+      usersInRoom.splice(usersInRoom.findIndex(user => user.id === socket.id), 1);
+      const currentRoom = rooms.get(roomID);
       rooms.set(roomID, {
-        ...room,
-        messages: [...room.messages, disconnectionSystemMessage],
+        ...currentRoom,
+        messages: [...currentRoom.messages, disconnectionSystemMessage],
         users: usersInRoom
       });
+      socket.broadcast.to(roomID).emit('SV_SEND_DISCONNECTION', { userID: socket.id, messages: rooms.get(roomID).messages });
+    } else {
+      rooms.delete(roomID);
     }
-
-    socket.broadcast.to(roomID).emit('SV_SEND_DISCONNECTION', { userID: socket.id, messages: room.messages });
   });
 
 });
