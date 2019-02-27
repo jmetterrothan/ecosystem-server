@@ -289,20 +289,22 @@ io.on('connection', socket => {
     while (!room.done) {
       roomID = room.value[0];
       usersInRoom = room.value[1].users;
-      if (Array.isArray(usersInRoom) && usersInRoom.includes(socket.id)) break;
+      if (Array.isArray(usersInRoom) && usersInRoom.some(user => user.id === socket.id)) break;
       room = allRooms.next();
     }
 
+    const user = usersInRoom.find(user => user.id === socket.id);
+
     const disconnectionSystemMessage = {
+      user,
       type: 'disconnection',
-      user: usersInRoom.find(user => user.id === socket.id),
       content: '',
       id: Date.now()
     };
 
     // delete user in room
-    if (Array.isArray(usersInRoom) && usersInRoom.length) {
-      usersInRoom.splice(usersInRoom.findIndex(user => user.id === socket.id), 1);
+    if (Array.isArray(usersInRoom) && usersInRoom.length > 0) {
+      usersInRoom.splice(usersInRoom.indexOf(user), 1);
       const currentRoom = rooms.get(roomID);
       rooms.set(roomID, {
         ...currentRoom,
