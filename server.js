@@ -228,7 +228,7 @@ io.on('connection', socket => {
     // stock new objects on room data
     const room = rooms.get(data.roomID);
     if (!room) {
-      console.log(`room ${roomID} does not exist`);
+      console.log(`room ${data.roomID} does not exist`);
       return;
     }
 
@@ -245,7 +245,7 @@ io.on('connection', socket => {
   socket.on('CL_SEND_REMOVE_OBJECT', data => {
     const room = rooms.get(data.roomID);
     if (!room) {
-      console.log(`room ${roomID} does not exist`);
+      console.log(`room ${data.roomID} does not exist`);
       return;
     }
 
@@ -262,7 +262,7 @@ io.on('connection', socket => {
   socket.on('CL_SEND_MESSAGE', data => {
     const room = rooms.get(data.roomID);
     if (!room) {
-      console.log(`room ${roomID} does not exist`);
+      console.log(`room ${data.roomID} does not exist`);
       return;
     }
 
@@ -311,8 +311,10 @@ io.on('connection', socket => {
         messages: [...currentRoom.messages, disconnectionSystemMessage].slice(messagesSize),
         users: usersInRoom
       });
-      socket.broadcast.to(roomID).emit('SV_SEND_DISCONNECTION', { userID: socket.id, messages: rooms.get(roomID).messages });
     }
+
+    socket.broadcast.to(roomID).emit('SV_SEND_DISCONNECTION', { userID: socket.id, messages: rooms.get(roomID).messages });
+
     if (Array.isArray(usersInRoom) && usersInRoom.length === 0) {
       rooms.delete(roomID);
     }
