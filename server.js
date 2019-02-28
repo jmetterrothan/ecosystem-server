@@ -152,10 +152,33 @@ async function trainModel() {
 
 // MULTIPLAYER
 
-let startTime;
 const rooms = new Map();
 
 const messagesSize = -16;
+
+const colors = [
+  'rgb(9, 204, 189)',
+  'rgb(39, 163, 54)',
+  'rgb(247, 5, 114)',
+  'rgb(120, 200, 151)',
+  'rgb(232, 2, 57)',
+  'rgb(150, 226, 221)',
+  'rgb(101, 227, 103)',
+  'rgb(94, 214, 253)',
+  'rgb(23, 175, 119)',
+  'rgb(141, 132, 86)',
+  'rgb(221, 17, 69)',
+  'rgb(191, 131, 193)',
+  'rgb(242, 9, 101)',
+  'rgb(143, 180, 237)',
+  'rgb(158, 187, 27)',
+  'rgb(79, 181, 131)',
+  'rgb(108, 232, 58)',
+  'rgb(58, 144, 179)',
+  'rgb(225, 252, 112)',
+  'rgb(39, 164, 217)',
+  'rgb(249, 60, 94)'
+];
 
 io.on('connection', socket => {
 
@@ -170,7 +193,9 @@ io.on('connection', socket => {
     const me = {
       id: socket.id,
       name: uniqueNamesGenerator('-', true),
-      color: `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`
+      color: !rooms.has(roomID)
+        ? colors[0]
+        : colors[rooms.get(roomID).users.length] || `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`
     };
 
     const connectionSystemMessage = {
@@ -294,6 +319,10 @@ io.on('connection', socket => {
     }
 
     const user = usersInRoom.find(user => user.id === socket.id);
+
+    if (!user) {
+      console.log(`${user.name} not found in ${roomID}`, `all users = ${usersInRoom}`);
+    }
 
     const disconnectionSystemMessage = {
       user,
