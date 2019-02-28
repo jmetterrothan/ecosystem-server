@@ -323,7 +323,7 @@ io.on('connection', socket => {
     const user = usersInRoom.find(user => user.id === socket.id);
 
     if (!user) {
-      console.log(`${user.name} not found in ${roomID}`, `all users = ${usersInRoom}`);
+      console.log(`${socket.id} not found in ${roomID}`, `all users = ${usersInRoom}`);
     }
 
     const disconnectionSystemMessage = {
