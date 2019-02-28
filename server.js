@@ -195,7 +195,7 @@ io.on('connection', socket => {
       name: uniqueNamesGenerator('-', true),
       color: !rooms.has(roomID)
         ? colors[0]
-        : colors[rooms.get(roomID).users.length] || `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`
+        : colors[rooms.get(roomID).colorIndex] || `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`
     };
 
     const connectionSystemMessage = {
@@ -212,13 +212,15 @@ io.on('connection', socket => {
         objectsAdded: [],
         objectsRemoved: [],
         messages: [connectionSystemMessage],
-        startTime: Date.now()
+        startTime: Date.now(),
+        colorIndex: 1
       });
     } else {
       // update users list
       const room = rooms.get(roomID);
       rooms.set(roomID, {
         ...room,
+        colorIndex: room.colorIndex + 1,
         messages: [...room.messages, connectionSystemMessage].slice(messagesSize),
         users: [...room.users, me],
       })
