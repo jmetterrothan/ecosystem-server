@@ -166,6 +166,7 @@ io.on('connection', socket => {
 
     if (!user) {
       console.log(`${socket.id} not found in ${roomID}`, `all users = ${usersInRoom}`);
+      return;
     }
 
     const disconnectionSystemMessage = {
